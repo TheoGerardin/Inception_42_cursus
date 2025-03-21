@@ -1,0 +1,70 @@
+version: '3'
+
+services:
+  nginx:
+    build: ./nginx
+    container_name: nginx
+    ports:
+      - "443:443"
+    volumes:
+      - wordpress_data:/var/www/html
+    networks:
+      - inception_network
+    restart: on-failure
+    depends_on:
+      - wordpress
+
+  wordpress:
+    build: ./wordpress
+    container_name: wordpress
+    environment:
+      - WORDPRESS_DB_HOST=mariadb
+      - WORDPRESS_DB_NAME=${DB_NAME}
+      - WORDPRESS_DB_USER=${DB_USER}
+      - WORDPRESS_DB_PASSWORD=${DB_PASSWORD}
+      - WORDPRESS_CONFIG_EXTRA=
+          define('WP_ADMIN_USER', '${WP_ADMIN_USER}');
+          define('WP_ADMIN_PASSWORD', '${WP_ADMIN_PASSWORD}');
+          define('WP_ADMIN_EMAIL', '${WP_ADMIN_EMAIL}');
+          define('WP_USER', '${WP_USER}');
+          define('WP_USER_PASSWORD', '${WP_USER_PASSWORD}');
+          define('WP_USER_EMAIL', '${WP_USER_EMAIL}');
+    volumes:
+      - wordpress_data:/var/www/html
+    networks:
+      - inception_network
+    restart: on-failure
+    depends_on:
+      - mariadb
+
+  mariadb:
+    build: ./mariadb
+    container_name: mariadb
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${DB_NAME}
+      - MYSQL_USER=${DB_USER}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - inception_network
+    restart: on-failure
+
+volumes:
+  wordpress_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/tgerardi/data/wordpress
+  db_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/tgerardi/data/database
+
+networks:
+  inception_network:
+    driver: bridge
